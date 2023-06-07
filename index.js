@@ -26,6 +26,19 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+    const userCollection = client.db("stringVerse").collection("users")
+
+    // User Apis
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    })
+
+
+
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log("Server successfully connected to MongoDB!");
@@ -43,10 +56,10 @@ run().catch(console.dir);
 
 
 
-app.get("/" , (req,res)=>{
-    res.send("String Verse server")
+app.get("/", (req, res) => {
+  res.send("String Verse server")
 })
 
-app.listen(port, ()=>{
-    console.log(`This app is running at port ${port}`);
+app.listen(port, () => {
+  console.log(`This app is running at port ${port}`);
 })
