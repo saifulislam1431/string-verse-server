@@ -29,6 +29,7 @@ async function run() {
 
     const userCollection = client.db("stringVerse").collection("users");
     const classesCollection = client.db("stringVerse").collection("classes");
+    const instructorCollection = client.db("stringVerse").collection("instructors");
 
     // User Apis
     app.post("/users", async (req, res) => {
@@ -44,6 +45,11 @@ async function run() {
       res.send(result)
     })
 
+    // 
+    app.get("/popular-instructors", async (req, res) => {
+      const result = await instructorCollection.find({}).sort({ NumberOfStudents: -1 }).toArray()
+      res.send(result)
+    })
 
 
     // Send a ping to confirm a successful connection
