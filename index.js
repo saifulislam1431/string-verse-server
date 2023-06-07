@@ -27,7 +27,8 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const userCollection = client.db("stringVerse").collection("users")
+    const userCollection = client.db("stringVerse").collection("users");
+    const classesCollection = client.db("stringVerse").collection("classes");
 
     // User Apis
     app.post("/users", async (req, res) => {
@@ -36,6 +37,12 @@ async function run() {
       res.send(result);
     })
 
+
+    // Classes Apis
+    app.get("/popular-classes", async (req, res) => {
+      const result = await classesCollection.find({}).sort({ numberOfStudents: -1 }).toArray()
+      res.send(result)
+    })
 
 
 
