@@ -77,6 +77,34 @@ async function run() {
       }
     })
 
+    app.get("/users" , verifyJWT , async(req,res)=>{
+      const result = await userCollection.find().toArray();
+      res.send(result)
+    })
+
+
+    // Admin APIs
+    app.patch("/users/admin/:id", verifyJWT ,async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const userUpdate = {
+        $set:{
+          role: "admin"
+        }
+      };
+      const result = await userCollection.updateOne(filter , userUpdate);
+      res.send(result);
+    })
+
+    app.get("/users/admin/:email", verifyJWT ,async(req,res)=>{
+      const email = req.params.email;
+      const query = {email: email};
+      const user = await userCollection.findOne(query);
+
+      const result = {admin: user?.role === "admin"}
+      res.send(result);
+    })
+
 
     // Classes Apis
     app.get("/popular-classes", async (req, res) => {
