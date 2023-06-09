@@ -60,6 +60,30 @@ async function run() {
       res.send({ token })
     })
 
+    //Verify Admin
+
+    const verifyAdmin = async(req,res,next)=>{
+      const email = req.decoded.email;
+      const query = {email: email}
+      const result =await userCollection.findOne(query)
+      if(result?.role !== "admin"){
+        return res.status(403).send({ error: true, message: "Forbidden access" }) 
+      }
+      next()
+    }
+
+        //Verify Admin
+
+        const verifyInstructor = async(req,res,next)=>{
+          const email = req.decoded.email;
+          const query = {email: email}
+          const result =await userCollection.findOne(query)
+          if(result?.role !== "instructor"){
+            return res.status(403).send({ error: true, message: "Forbidden access" }) 
+          }
+          next()
+        }
+
 
     // User Apis
     app.post("/users", async (req, res) => {
@@ -77,13 +101,15 @@ async function run() {
       }
     })
 
-    app.get("/users" , verifyJWT , async(req,res)=>{
+    app.get("/users" , verifyJWT , verifyAdmin , async(req,res)=>{
       const result = await userCollection.find().toArray();
       res.send(result)
     })
 
 
     // Admin APIs
+
+
     app.patch("/users/admin/:id", verifyJWT ,async(req,res)=>{
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)}
@@ -102,6 +128,28 @@ async function run() {
       const user = await userCollection.findOne(query);
 
       const result = {admin: user?.role === "admin"}
+      res.send(result);
+    })
+
+    // Instructors APIs
+    app.patch("/users/instructor/:id", verifyJWT ,async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const userUpdate = {
+        $set:{
+          role: "instructor"
+        }
+      };
+      const result = await userCollection.updateOne(filter , userUpdate);
+      res.send(result);
+    })
+
+    app.get("/users/instructor/:email", verifyJWT ,async(req,res)=>{
+      const email = req.params.email;
+      const query = {email: email};
+      const user = await userCollection.findOne(query);
+
+      const result = {admin: user?.role === "instructor"}
       res.send(result);
     })
 
