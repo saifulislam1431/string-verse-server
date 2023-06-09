@@ -143,6 +143,12 @@ async function run() {
       res.send({result , deletedRes})
     })
 
+    app.get("/payment", verifyJWT, async(req ,res)=>{
+      const email = req.query.email;
+      const result = await paymentCollection.find({email: email}).toArray();
+      res.send(result);
+    })
+
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
