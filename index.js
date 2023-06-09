@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require("stripe")(process.env.STRIPE_INTENTS_SK)
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.8cnv71c.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -18,7 +19,7 @@ const verifyJWT = (req, res, next) => {
     return res.status(401).send({ error: true, message: "Unauthorized Access" })
   }
   const token = authorization.split(' ')[1]
-  console.log(token);
+  // console.log(token);
   jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
     if (err) {
       return res.status(401).send({ error: true, message: "Unauthorized Access" })
@@ -50,6 +51,7 @@ async function run() {
     const classesCollection = client.db("stringVerse").collection("classes");
     const instructorCollection = client.db("stringVerse").collection("instructors");
     const selectedClassesCollection = client.db("stringVerse").collection("selectedCart");
+    const paymentCollection = client.db("stringVerse").collection("payments");
 
     // JWT
     app.post("/jwt", async (req, res) => {
@@ -109,11 +111,36 @@ async function run() {
       res.send(result)
     })
 
-    app.delete("/selected-classes-cart/:id" , verifyJWT , async(req,res)=>{
+    app.delete("/selected-classes-cart/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await selectedClassesCollection.deleteOne(query)
       res.send(result);
+    })
+
+    // Payment related apis
+
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: [
+          "card"
+        ]
+      })
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      })
+    })
+
+    app.post("/payment", verifyJWT, async (req, res) => {
+      const data = req.body;
+      const result = await paymentCollection.insertOne(data);
+      const query = { _id: { $in: data.selectedClasses.map(id => new ObjectId(id)) } }
+      const deletedRes = await selectedClassesCollection.deleteMany(query)
+      res.send({result , deletedRes})
     })
 
 
