@@ -153,6 +153,13 @@ async function run() {
       res.send(result);
     })
 
+    app.get("/instructor-classes",verifyJWT,verifyInstructor , async(req,res)=>{
+      const email = req.query.email;
+      const query = {instructorEmail : email}
+      const result = await classesCollection.find(query).toArray()
+      res.send(result)
+    })
+
 
     // Classes Apis
     app.get("/popular-classes", async (req, res) => {
