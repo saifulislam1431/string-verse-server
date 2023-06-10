@@ -56,33 +56,33 @@ async function run() {
     // JWT
     app.post("/jwt", async (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '3h' })
       res.send({ token })
     })
 
     //Verify Admin
 
-    const verifyAdmin = async(req,res,next)=>{
+    const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = {email: email}
-      const result =await userCollection.findOne(query)
-      if(result?.role !== "admin"){
-        return res.status(403).send({ error: true, message: "Forbidden access" }) 
+      const query = { email: email }
+      const result = await userCollection.findOne(query)
+      if (result?.role !== "admin") {
+        return res.status(403).send({ error: true, message: "Forbidden access" })
       }
       next()
     }
 
-        //Verify Admin
+    //Verify Admin
 
-        const verifyInstructor = async(req,res,next)=>{
-          const email = req.decoded.email;
-          const query = {email: email}
-          const result =await userCollection.findOne(query)
-          if(result?.role !== "instructor"){
-            return res.status(403).send({ error: true, message: "Forbidden access" }) 
-          }
-          next()
-        }
+    const verifyInstructor = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email }
+      const result = await userCollection.findOne(query)
+      if (result?.role !== "instructor") {
+        return res.status(403).send({ error: true, message: "Forbidden access" })
+      }
+      next()
+    }
 
 
     // User Apis
@@ -101,7 +101,7 @@ async function run() {
       }
     })
 
-    app.get("/users" , verifyJWT , verifyAdmin , async(req,res)=>{
+    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result)
     })
@@ -110,52 +110,65 @@ async function run() {
     // Admin APIs
 
 
-    app.patch("/users/admin/:id", verifyJWT ,async(req,res)=>{
+    app.patch("/users/admin/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)}
+      const filter = { _id: new ObjectId(id) }
       const userUpdate = {
-        $set:{
+        $set: {
           role: "admin"
         }
       };
-      const result = await userCollection.updateOne(filter , userUpdate);
+      const result = await userCollection.updateOne(filter, userUpdate);
       res.send(result);
     })
 
-    app.get("/users/admin/:email", verifyJWT ,async(req,res)=>{
+    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      const query = {email: email};
+      const query = { email: email };
       const user = await userCollection.findOne(query);
 
-      const result = {admin: user?.role === "admin"}
+      const result = { admin: user?.role === "admin" }
       res.send(result);
+    })
+
+    app.patch("/popular-classes/:id", verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const newData = req.body;
+      const updateDoc = {
+        $set:{
+          status: newData.status
+        }
+      }
+      const result = await classesCollection.updateOne(filter, updateDoc)
+      res.send(result)
     })
 
     // Instructors APIs
-    app.patch("/users/instructor/:id", verifyJWT ,async(req,res)=>{
+    app.patch("/users/instructor/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)}
+      const filter = { _id: new ObjectId(id) }
       const userUpdate = {
-        $set:{
+        $set: {
           role: "instructor"
         }
       };
-      const result = await userCollection.updateOne(filter , userUpdate);
+      const result = await userCollection.updateOne(filter, userUpdate);
       res.send(result);
     })
 
-    app.get("/users/instructor/:email", verifyJWT ,async(req,res)=>{
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      const query = {email: email};
+      const query = { email: email };
       const user = await userCollection.findOne(query);
 
-      const result = {instructor: user?.role === "instructor"}
+      const result = { instructor: user?.role === "instructor" }
       res.send(result);
     })
 
-    app.get("/instructor-classes",verifyJWT,verifyInstructor , async(req,res)=>{
+    app.get("/instructor-classes", verifyJWT, verifyInstructor, async (req, res) => {
       const email = req.query.email;
-      const query = {instructorEmail : email}
+      const query = { instructorEmail: email }
       const result = await classesCollection.find(query).toArray()
       res.send(result)
     })
@@ -164,6 +177,12 @@ async function run() {
     // Classes Apis
     app.get("/popular-classes", async (req, res) => {
       const result = await classesCollection.find({}).sort({ numberOfStudents: -1 }).toArray()
+      res.send(result)
+    })
+
+    app.post("/popular-classes", verifyJWT, verifyInstructor, async (req, res) => {
+      const data = req.body;
+      const result = await classesCollection.insertOne(data);
       res.send(result)
     })
 
@@ -223,12 +242,12 @@ async function run() {
       const result = await paymentCollection.insertOne(data);
       const query = { _id: { $in: data.selectedClasses.map(id => new ObjectId(id)) } }
       const deletedRes = await selectedClassesCollection.deleteMany(query)
-      res.send({result , deletedRes})
+      res.send({ result, deletedRes })
     })
 
-    app.get("/payment", verifyJWT, async(req ,res)=>{
+    app.get("/payment", verifyJWT, async (req, res) => {
       const email = req.query.email;
-      const result = await paymentCollection.find({email: email}).toArray();
+      const result = await paymentCollection.find({ email: email }).toArray();
       res.send(result);
     })
 
