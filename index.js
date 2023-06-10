@@ -52,6 +52,8 @@ async function run() {
     const instructorCollection = client.db("stringVerse").collection("instructors");
     const selectedClassesCollection = client.db("stringVerse").collection("selectedCart");
     const paymentCollection = client.db("stringVerse").collection("payments");
+    const reviewCollection = client.db("stringVerse").collection("review");
+    const blogsCollection = client.db("stringVerse").collection("blogs");
 
     // JWT
     app.post("/jwt", async (req, res) => {
@@ -257,6 +259,21 @@ async function run() {
       const email = req.query.email;
       const result = await paymentCollection.find({ email: email }).toArray();
       res.send(result);
+    })
+
+    // Review APIS
+
+    app.get("/reviews", async(req,res)=>{
+      const result = await reviewCollection.find().toArray()
+      res.send(result)
+    })
+
+    // Blogs Apis
+
+    app.get("/blogs",async(req,res)=>{
+      const result = await blogsCollection.find().toArray()
+      res.send(result)
+
     })
 
 
