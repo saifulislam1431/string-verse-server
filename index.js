@@ -110,7 +110,7 @@ async function run() {
 
     app.get("/users/profile", verifyJWT, async (req, res) => {
       const email = req.query.email;
-      const query = {email: email};
+      const query = { email: email };
       const result = await userCollection.findOne(query);
       res.send(result)
     })
@@ -230,6 +230,36 @@ async function run() {
       res.send(result);
     })
 
+    app.get("/enrollDetails", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const user = await paymentCollection.find({ email: email }).toArray();
+      if (user) {
+        const payments = await paymentCollection.find().toArray();
+        const classIds = payments.flatMap(payment => payment.classId);
+        // console.log("ClassIds:",classIds );
+        const filteredClassIds = classIds.filter(classId => classId !== null && classId !== undefined);
+        // console.log('Filtered Class IDs:', filteredClassIds);
+        const classes = await classesCollection.aggregate([
+          {
+            $match: {
+              _id: { $in: filteredClassIds.map(id => new ObjectId(id)) }
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              className: 1,
+              image: 1,
+              instructorName: 1,
+              instructorEmail: 1
+            }
+          }
+        ]).toArray();
+        // console.log('Classes:', classes); 
+        res.send(classes)   
+      }
+    })
+
     // Payment related apis
 
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
@@ -257,20 +287,20 @@ async function run() {
 
     app.get("/payment", verifyJWT, async (req, res) => {
       const email = req.query.email;
-      const result = await paymentCollection.find({ email: email }).toArray();
+      const result = await paymentCollection.find({ email: email }).sort({date: -1}).toArray();
       res.send(result);
     })
 
     // Review APIS
 
-    app.get("/reviews", async(req,res)=>{
+    app.get("/reviews", async (req, res) => {
       const result = await reviewCollection.find().toArray()
       res.send(result)
     })
 
     // Blogs Apis
 
-    app.get("/blogs",async(req,res)=>{
+    app.get("/blogs", async (req, res) => {
       const result = await blogsCollection.find().toArray()
       res.send(result)
 
