@@ -106,6 +106,13 @@ async function run() {
       res.send(result)
     })
 
+    app.get("/users/profile", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const query = {email: email};
+      const result = await userCollection.findOne(query);
+      res.send(result)
+    })
+
 
     // Admin APIs
 
@@ -136,8 +143,9 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const newData = req.body;
       const updateDoc = {
-        $set:{
-          status: newData.status
+        $set: {
+          status: newData.status,
+          feedback: newData.feedback || "No Feedback!"
         }
       }
       const result = await classesCollection.updateOne(filter, updateDoc)
