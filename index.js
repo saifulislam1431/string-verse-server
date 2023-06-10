@@ -234,7 +234,7 @@ async function run() {
       const email = req.query.email;
       const user = await paymentCollection.find({ email: email }).toArray();
       if (user) {
-        const payments = await paymentCollection.find().toArray();
+        const payments = await paymentCollection.find({ email: email }).toArray();
         const classIds = payments.flatMap(payment => payment.classId);
         // console.log("ClassIds:",classIds );
         const filteredClassIds = classIds.filter(classId => classId !== null && classId !== undefined);
@@ -257,6 +257,9 @@ async function run() {
         ]).toArray();
         // console.log('Classes:', classes); 
         res.send(classes)   
+      }
+      else{
+        return res.send([])
       }
     })
 
