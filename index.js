@@ -256,9 +256,9 @@ async function run() {
           }
         ]).toArray();
         // console.log('Classes:', classes); 
-        res.send(classes)   
+        res.send(classes)
       }
-      else{
+      else {
         return res.send([])
       }
     })
@@ -282,7 +282,35 @@ async function run() {
 
     app.post("/payment", verifyJWT, async (req, res) => {
       const data = req.body;
+      const classIds = req.body.classId;
       const result = await paymentCollection.insertOne(data);
+
+
+      for (const id of classIds) {
+        const filter = { _id: new ObjectId(id) }
+        // const update = [
+        //   { $set: { availableSeats: { $toInt: "$availableSeats" }, numberOfStudents: { $toInt: "$numberOfStudents" } } },
+        //   { $inc: { numberOfStudents: 1, availableSeats: -1 } }
+        // ];
+
+        const document = await classesCollection.findOne(filter);
+
+        if (document) {
+          const availableSeats = parseInt(document.availableSeats);
+          if (isNaN(availableSeats)) {
+            throw new Error(`Invalid availableSeats value for classId: ${id}`);
+          }
+
+          const update = {
+            $inc: { numberOfStudents: 1 },
+            $set: { availableSeats: (availableSeats - 1).toString() }
+          };
+
+          await classesCollection.updateOne(filter, update)
+        }
+      }
+
+
       const query = { _id: { $in: data.selectedClasses.map(id => new ObjectId(id)) } }
       const deletedRes = await selectedClassesCollection.deleteMany(query)
       res.send({ result, deletedRes })
@@ -290,7 +318,7 @@ async function run() {
 
     app.get("/payment", verifyJWT, async (req, res) => {
       const email = req.query.email;
-      const result = await paymentCollection.find({ email: email }).sort({date: -1}).toArray();
+      const result = await paymentCollection.find({ email: email }).sort({ date: -1 }).toArray();
       res.send(result);
     })
 
