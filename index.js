@@ -45,7 +45,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const userCollection = client.db("stringVerse").collection("users");
     const classesCollection = client.db("stringVerse").collection("classes");
@@ -154,6 +154,7 @@ async function run() {
       res.send(result)
     })
 
+
     // Instructors APIs
     app.patch("/users/instructor/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
@@ -193,6 +194,27 @@ async function run() {
     app.post("/popular-classes", verifyJWT, verifyInstructor, async (req, res) => {
       const data = req.body;
       const result = await classesCollection.insertOne(data);
+      res.send(result)
+    })
+
+    app.put("/popular-classes/:id", verifyJWT, verifyInstructor, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true }
+      const newData = req.body;
+      const updateDoc = {
+        $set: {
+          instructorName: newData.instructorName,
+          instructorEmail: newData.instructorEmail,
+          image: newData.image,
+          className: newData.className,
+          availableSeats: newData.availableSeats,
+          numberOfStudents: newData.numberOfStudents,
+          price: newData.price,
+          status: newData.status,
+        }
+      }
+      const result = await classesCollection.updateOne(filter, updateDoc, options)
       res.send(result)
     })
 
